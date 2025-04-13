@@ -318,7 +318,7 @@ class ApiController {
             $downloadToken = $this->fileManager->uploadFile($fileContent, $fileName, $userId, $expireHours);
             
             // Generate download URL
-            $downloadUrl = $this->getBaseUrl() . '/download.php?token=' . $downloadToken;
+            $downloadUrl = $this->getBaseUrl() . '/php_file_store/file/download.php?token=' . $downloadToken;
             
             return $this->jsonResponse([
                 'success' => true,
