@@ -349,58 +349,33 @@ document.addEventListener('DOMContentLoaded', function() {
         fileTable.style.display = 'none';
         emptyMessage.style.display = 'none';
         
-        // Send request to get files
         fetch('api/list-files.php', {
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + sessionToken
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.text(); // Get raw response text
-        })
-        .then(text => {
-            try {
-                return text ? JSON.parse(text) : {}; // Parse JSON if text is not empty
-            } catch (error) {
-                throw new Error('Invalid JSON response: ' + text);
-            }
-        })
+        .then(response => response.json())
         .then(data => {
-            // Hide loader
             loader.style.display = 'none';
             
             if (data.files && data.files.length > 0) {
-                // Show file table
                 fileTable.style.display = 'table';
-                
-                // Clear existing rows
                 fileTableBody.innerHTML = '';
                 
-                // Add file rows
                 data.files.forEach(file => {
                     const row = document.createElement('tr');
-                    
-                    // Format dates
                     const uploadDate = new Date(file.created_at);
                     const expireDate = new Date(file.expire_time);
                     const now = new Date();
                     
-                    // Calculate time left
                     let timeLeft = '';
                     if (expireDate > now) {
                         const diffMs = expireDate - now;
                         const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-                        
-                        if (diffHrs > 24) {
-                            const diffDays = Math.floor(diffHrs / 24);
-                            timeLeft = `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
-                        } else {
-                            timeLeft = `${diffHrs} hour${diffHrs !== 1 ? 's' : ''}`;
-                        }
+                        timeLeft = diffHrs > 24 ? 
+                            `${Math.floor(diffHrs/24)} days` : 
+                            `${diffHrs} hours`;
                     } else {
                         timeLeft = 'Expired';
                     }
@@ -419,24 +394,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     fileTableBody.appendChild(row);
                 });
                 
-                // Add event listeners for copy and delete buttons
+                // Add event listeners for buttons
                 document.querySelectorAll('.btn-copy').forEach(btn => {
                     btn.addEventListener('click', copyDownloadLink);
                 });
-                
                 document.querySelectorAll('.btn-delete').forEach(btn => {
                     btn.addEventListener('click', deleteFile);
                 });
             } else {
-                // Show empty message
                 emptyMessage.style.display = 'block';
             }
         })
         .catch(error => {
-            // Hide loader
             loader.style.display = 'none';
-            
-            // Show empty message with error
             emptyMessage.textContent = 'Could not load files. Please try again.';
             emptyMessage.style.display = 'block';
             console.error('Load files error:', error);

@@ -364,7 +364,7 @@ class ApiController {
         
         // Add download URLs to each file
         foreach ($files as &$file) {
-            $file['download_url'] = $this->getBaseUrl() . '/download.php?token=' . $file['download_token'];
+            $file['download_url'] = $this->getBaseUrl() . '/php_file_store/file/download.php?token=' . $file['download_token'];
         }
         
         return $this->jsonResponse(['files' => $files]);
@@ -506,5 +506,53 @@ class ApiController {
     private function getBaseUrl() {
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
         return $protocol . '://' . $_SERVER['HTTP_HOST'];
+    }
+}
+
+class UrlShortener {
+    private $db;
+    
+    public function __construct($db) {
+        $this->db = $db;
+    }
+    
+    public function createShortUrl($fileId) {
+        // Generate unique short code
+        do {
+            $shortCode = $this->generateShortCode();
+            $exists = $this->db->query("SELECT id FROM short_urls WHERE short_code = ?", [$shortCode])->fetch();
+        } while ($exists);
+        
+        // Save short URL
+        $this->db->query(
+            "INSERT INTO short_urls (file_id, short_code) VALUES (?, ?)",
+            [$fileId, $shortCode]
+        );
+        
+        return $shortCode;
+    }
+    
+    private function generateShortCode($length = 6) {
+        $chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $code = '';
+        for ($i = 0; $i < $length; $i++) {
+            $code .= $chars[rand(0, strlen($chars) - 1)];
+        }
+        return $code;
+    }
+    
+    public function getShortUrl($fileId) {
+        $result = $this->db->query(
+            "SELECT short_code FROM short_urls WHERE file_id = ?",
+            [$fileId]
+        )->fetch();
+        
+        if (!$result) {
+            $shortCode = $this->createShortUrl($fileId);
+        } else {
+            $shortCode = $result['short_code'];
+        }
+        
+        return $shortCode;
     }
 }
