@@ -3,4 +3,8 @@ php_value post_max_size 20M
 php_value memory_limit 128M
 
 RewriteEngine On
-RewriteRule ^s/([a-zA-Z0-9]+)$ s/index.php?code=$1 [L,QSA]
+
+# Show invalid URL page for all other invalid URLs
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /php_file_store/file/invalid-url.php [L]
